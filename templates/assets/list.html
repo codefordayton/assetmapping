@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Directory — Old North Dayton Assets{% endblock %}
+{% block nav_list %}active{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <h2 class="fw-bold mb-1">Asset Directory</h2>
+      <p class="text-muted">{{ assets.count }} resource{{ assets.count|pluralize }} in Old North Dayton</p>
+    </div>
+    <div class="col-md-4 text-md-end">
+      <a href="/submit/" class="btn btn-success"><i class="fa fa-plus me-1"></i> Add an Asset</a>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <form method="get" class="d-flex gap-2">
+        <input type="hidden" name="category" value="{{ active_category }}">
+        <input type="text" name="q" value="{{ search }}" class="form-control" placeholder="Search by name, description…">
+        <button type="submit" class="btn btn-outline-secondary"><i class="fa fa-search"></i></button>
+        {% if search or active_category %}
+        <a href="/assets/" class="btn btn-outline-danger" title="Clear filters"><i class="fa fa-times"></i></a>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+
+  <!-- Category tabs -->
+  <ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+      <a class="nav-link {% if not active_category %}active{% endif %}" href="/assets/?q={{ search }}">All</a>
+    </li>
+    {% for cat in categories %}
+    <li class="nav-item">
+      <a class="nav-link {% if active_category == cat.slug %}active{% endif %}"
+         href="/assets/?category={{ cat.slug }}&q={{ search }}">
+        {{ cat.name }}
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+
+  <!-- Asset grid -->
+  {% if assets %}
+  <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    {% for asset in assets %}
+    <div class="col">
+      <div class="card h-100 asset-card" onclick="window.location='/assets/{{ asset.pk }}/'">
+        {% if asset.photo %}
+        <img src="{{ asset.photo.url }}" class="card-img-top" style="height:160px;object-fit:cover" alt="">
+        {% else %}
+        <div style="height:80px;background:linear-gradient(135deg,{{ asset.category.color }}33,{{ asset.category.color }}11);display:flex;align-items:center;justify-content:center">
+          <i class="fa fa-{{ asset.category.icon }} fa-2x" style="color:{{ asset.category.color }};opacity:0.5"></i>
+        </div>
+        {% endif %}
+        <div class="card-body">
+          <div class="mb-2">
+            <span class="category-badge" style="background:{{ asset.category.color }}">
+              {{ asset.category.name }}
+            </span>
+            {% if asset.verified %}
+            <span class="verified-badge ms-1">✓ Verified</span>
+            {% endif %}
+          </div>
+          <h6 class="card-title fw-bold mb-1">{{ asset.name }}</h6>
+          <p class="card-text text-muted small">{{ asset.description|truncatewords:20 }}</p>
+          {% if asset.address %}
+          <p class="card-text small text-muted"><i class="fa fa-location-dot me-1"></i>{{ asset.address }}</p>
+          {% endif %}
+          {% if asset.hours %}
+          <p class="card-text small text-muted"><i class="fa fa-clock me-1"></i>{{ asset.hours }}</p>
+          {% endif %}
+        </div>
+        <div class="card-footer bg-transparent border-top-0 d-flex justify-content-between">
+          <a href="/assets/{{ asset.pk }}/" class="btn btn-sm btn-outline-primary">View details</a>
+          <a href="/?focus={{ asset.pk }}" class="btn btn-sm btn-outline-secondary"><i class="fa fa-map-pin me-1"></i> Map</a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="text-center py-5">
+    <i class="fa fa-search fa-3x text-muted mb-3"></i>
+    <p class="text-muted">No assets found for that filter.</p>
+    <a href="/assets/" class="btn btn-outline-secondary">Clear filters</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

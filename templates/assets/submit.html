@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}Add a Resource — Old North Dayton Assets{% endblock %}
+
+{% block extra_css %}
+<style>
+  #location-map { height: 320px; border-radius: 8px; cursor: crosshair; border: 2px solid #dee2e6; }
+  #location-map.has-pin { border-color: #198754; }
+  .step-header {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #6c757d;
+    margin-bottom: 4px;
+  }
+  .step-card { border: 1px solid #dee2e6; border-radius: 8px; padding: 24px; margin-bottom: 24px; }
+  #pin-status { font-size: 0.85rem; margin-top: 8px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 720px">
+  <h2 class="fw-bold mb-1">Add a Community Asset</h2>
+  <p class="text-muted mb-4">Know a local organization, park, business, or neighbor with skills to share? Add it to the map.</p>
+
+  {% if form.errors %}
+  <div class="alert alert-danger">
+    Please fix the errors below before submitting.
+  </div>
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    <!-- Step 1: Basic Info -->
+    <div class="step-card">
+      <div class="step-header">Step 1 — Basic Information</div>
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Name *</label>
+        {{ form.name.errors }}
+        <input type="text" name="name" value="{{ form.name.value|default:'' }}"
+               class="form-control {% if form.name.errors %}is-invalid{% endif %}"
+               placeholder="e.g. Old North Food Pantry" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Category *</label>
+        {{ form.category.errors }}
+        <select name="category" class="form-select {% if form.category.errors %}is-invalid{% endif %}" required>
+          <option value="">— Choose a category —</option>
+          {% for cat in categories %}
+          <option value="{{ cat.pk }}" {% if form.category.value == cat.pk|stringformat:"s" %}selected{% endif %}>
+            {{ cat.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="mb-0">
+        <label class="form-label fw-semibold">Description *</label>
+        {{ form.description.errors }}
+        <textarea name="description" rows="4"
+                  class="form-control {% if form.description.errors %}is-invalid{% endif %}"
+                  placeholder="What does this place or person offer the community?" required>{{ form.description.value|default:'' }}</textarea>
+      </div>
+    </div>
+
+    <!-- Step 2: Location -->
+    <div class="step-card">
+      <div class="step-header">Step 2 — Location</div>
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Address <span class="text-muted fw-normal">(optional but helpful)</span></label>
+        <input type="text" name="address" value="{{ form.address.value|default:'' }}"
+               class="form-control" placeholder="123 Gettysburg Ave, Dayton, OH 45405">
+      </div>
+      <label class="form-label fw-semibold">Pin on Map *</label>
+      <p class="text-muted small mb-2">Click the map to drop a pin at this location.</p>
+      <div id="location-map"></div>
+      <div id="pin-status" class="text-muted">
+        <i class="fa fa-circle-info me-1"></i> Click the map to place a pin
+      </div>
+      {{ form.latitude.errors }}
+      <input type="hidden" name="latitude" id="id_latitude" value="{{ form.latitude.value|default:'' }}">
+      <input type="hidden" name="longitude" id="id_longitude" value="{{ form.longitude.value|default:'' }}">
+    </div>
+
+    <!-- Step 3: Contact -->
+    <div class="step-card">
+      <div class="step-header">Step 3 — Contact & Details <span class="text-muted">(all optional)</span></div>
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label">Phone</label>
+          <input type="text" name="phone" value="{{ form.phone.value|default:'' }}"
+                 class="form-control" placeholder="(937) 555-1234">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Website</label>
+          <input type="url" name="website" value="{{ form.website.value|default:'' }}"
+                 class="form-control" placeholder="https://…">
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Hours</label>
+        <input type="text" name="hours" value="{{ form.hours.value|default:'' }}"
+               class="form-control" placeholder="e.g. Mon–Fri 9am–5pm, or By appointment">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Keywords / Tags</label>
+        <input type="text" name="tags" value="{{ form.tags.value|default:'' }}"
+               class="form-control" placeholder="food, free, youth, seniors">
+        <div class="form-text">Comma-separated. Helps people find this in search.</div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Photo</label>
+        <input type="file" name="photo" class="form-control" accept="image/*">
+      </div>
+      <div class="mb-0">
+        <label class="form-label">Your name</label>
+        <input type="text" name="submitted_by" value="{{ form.submitted_by.value|default:'' }}"
+               class="form-control" placeholder="Optional">
+        <div class="form-text">We won't publish this — it's just so we can follow up if needed.</div>
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center">
+      <p class="text-muted small mb-0">Submissions are reviewed before appearing on the map.</p>
+      <button type="submit" class="btn btn-success btn-lg px-4">
+        <i class="fa fa-paper-plane me-2"></i> Submit
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const mapEl = document.getElementById('location-map');
+const latInput = document.getElementById('id_latitude');
+const lngInput = document.getElementById('id_longitude');
+const pinStatus = document.getElementById('pin-status');
+
+const map = L.map('location-map').setView([39.7728, -84.1726], 15);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap contributors'
+}).addTo(map);
+
+let pin = null;
+
+// Restore existing pin if re-rendering form after error
+const existingLat = latInput.value;
+const existingLng = lngInput.value;
+if (existingLat && existingLng) {
+  pin = L.marker([parseFloat(existingLat), parseFloat(existingLng)]).addTo(map);
+  map.setView([parseFloat(existingLat), parseFloat(existingLng)], 16);
+  mapEl.classList.add('has-pin');
+  pinStatus.innerHTML = `<span class="text-success"><i class="fa fa-check-circle me-1"></i>Pin placed at ${parseFloat(existingLat).toFixed(5)}, ${parseFloat(existingLng).toFixed(5)}</span>`;
+}
+
+map.on('click', function(e) {
+  const { lat, lng } = e.latlng;
+  latInput.value = lat.toFixed(6);
+  lngInput.value = lng.toFixed(6);
+
+  if (pin) map.removeLayer(pin);
+  pin = L.marker([lat, lng]).addTo(map);
+  mapEl.classList.add('has-pin');
+  pinStatus.innerHTML = `<span class="text-success"><i class="fa fa-check-circle me-1"></i>Pin placed at ${lat.toFixed(5)}, ${lng.toFixed(5)}</span>`;
+});
+</script>
+{% endblock %}

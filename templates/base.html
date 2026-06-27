@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Old North Dayton Asset Map{% endblock %}</title>
+
+  <!-- Bootstrap -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <!-- Leaflet MarkerCluster -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  {% block extra_css %}{% endblock %}
+
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background: #f8f9fa; }
+
+    .navbar-brand { font-weight: 700; letter-spacing: -0.5px; }
+    .navbar-brand span { color: #5cb85c; }
+
+    .nav-tabs .nav-link { color: #495057; }
+    .nav-tabs .nav-link.active { font-weight: 600; }
+
+    .category-badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #fff;
+    }
+    .badge-community { background: #7952b3; }
+    .badge-greenspace { background: #198754; }
+    .badge-business { background: #fd7e14; }
+    .badge-skills { background: #0d6efd; }
+
+    .asset-card {
+      transition: box-shadow 0.15s;
+      cursor: pointer;
+    }
+    .asset-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+
+    .verified-badge {
+      font-size: 0.7rem;
+      background: #d1e7dd;
+      color: #0a3622;
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+
+    footer {
+      background: #212529;
+      color: #adb5bd;
+      padding: 1.5rem 0;
+      margin-top: 3rem;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container">
+    <a class="navbar-brand" href="/">Old North <span>Dayton</span> Assets</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="nav">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item">
+          <a class="nav-link {% block nav_map %}{% endblock %}" href="/">
+            <i class="fa fa-map me-1"></i> Map
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% block nav_list %}{% endblock %}" href="/assets/">
+            <i class="fa fa-list me-1"></i> Directory
+          </a>
+        </li>
+      </ul>
+      <a href="/submit/" class="btn btn-success btn-sm">
+        <i class="fa fa-plus me-1"></i> Add an Asset
+      </a>
+    </div>
+  </div>
+</nav>
+
+{% if messages %}
+<div class="container mt-3">
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% block content %}{% endblock %}
+
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-md-6">
+        <strong style="color:#fff">Old North Dayton Asset Map</strong><br>
+        A community resource directory for the Old North Dayton neighborhood.
+      </div>
+      <div class="col-md-6 text-md-end">
+        <a href="/submit/" class="text-light">Add an asset</a> &middot;
+        <a href="/admin/" class="text-light">Admin</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

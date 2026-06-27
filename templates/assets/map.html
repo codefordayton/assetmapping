@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+{% block title %}Map — Old North Dayton Assets{% endblock %}
+{% block nav_map %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+  #map { height: calc(100vh - 56px); width: 100%; }
+
+  #sidebar {
+    position: absolute;
+    top: 56px;
+    left: 0;
+    width: 300px;
+    height: calc(100vh - 56px);
+    background: #fff;
+    z-index: 1000;
+    overflow-y: auto;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+  }
+
+  #map-container {
+    position: relative;
+    height: calc(100vh - 56px);
+    overflow: hidden;
+  }
+
+  #map {
+    position: absolute;
+    left: 300px;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    height: 100%;
+    width: auto;
+  }
+
+  .sidebar-header {
+    padding: 16px;
+    border-bottom: 1px solid #e9ecef;
+    background: #f8f9fa;
+  }
+
+  .sidebar-header h6 { margin: 0 0 10px; font-weight: 700; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 1px; color: #6c757d; }
+
+  .category-filter {
+    list-style: none;
+    padding: 12px 16px;
+    margin: 0;
+    border-bottom: 1px solid #e9ecef;
+  }
+
+  .category-filter li { margin-bottom: 8px; }
+
+  .category-filter label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+
+  .cat-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  #asset-panel {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+  }
+
+  .asset-item {
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    border: 1px solid #e9ecef;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .asset-item:hover { background: #f0f4ff; }
+  .asset-item .name { font-weight: 600; font-size: 0.9rem; margin: 0 0 2px; }
+  .asset-item .meta { font-size: 0.75rem; color: #6c757d; }
+
+  .leaflet-popup-content { min-width: 200px; }
+  .popup-name { font-weight: 700; font-size: 1rem; margin-bottom: 4px; }
+  .popup-cat { font-size: 0.75rem; margin-bottom: 8px; }
+  .popup-desc { font-size: 0.85rem; color: #444; margin-bottom: 8px; }
+  .popup-meta { font-size: 0.8rem; color: #666; }
+
+  #toggle-sidebar {
+    position: absolute;
+    left: 300px;
+    top: 10px;
+    z-index: 1001;
+    transition: left 0.2s;
+  }
+
+  @media (max-width: 768px) {
+    #sidebar { width: 100%; height: 40vh; top: auto; bottom: 0; }
+    #map { left: 0; height: 60vh; top: 56px; bottom: auto; }
+    #toggle-sidebar { display: none; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="map-container">
+  <div id="sidebar">
+    <div class="sidebar-header">
+      <h6>Filter by Category</h6>
+      <div class="input-group input-group-sm">
+        <span class="input-group-text"><i class="fa fa-search"></i></span>
+        <input type="text" id="search-input" class="form-control" placeholder="Search assets…">
+      </div>
+    </div>
+
+    <ul class="category-filter">
+      <li>
+        <label>
+          <input type="checkbox" class="cat-check" value="all" checked> All categories
+        </label>
+      </li>
+      {% for cat in categories %}
+      <li>
+        <label>
+          <input type="checkbox" class="cat-check" value="{{ cat.slug }}">
+          <span class="cat-dot" style="background: {{ cat.color }};"></span>
+          {{ cat.name }}
+        </label>
+      </li>
+      {% endfor %}
+    </ul>
+
+    <div id="asset-panel">
+      <p class="text-muted" style="font-size:0.8rem">Loading assets…</p>
+    </div>
+  </div>
+
+  <div id="map"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CATEGORY_COLORS = {
+  {% for cat in categories %}'{{ cat.slug }}': '{{ cat.color }}',{% endfor %}
+};
+
+const map = L.map('map').setView([39.7728, -84.1726], 15);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
+  maxZoom: 19,
+}).addTo(map);
+
+const clusters = L.markerClusterGroup({ maxClusterRadius: 40 });
+map.addLayer(clusters);
+
+let allFeatures = [];
+let markers = [];
+
+function colorToHex(name) {
+  const map = {
+    green: '#198754', blue: '#0d6efd', orange: '#fd7e14',
+    purple: '#7952b3', red: '#dc3545', darkblue: '#003580',
+    cadetblue: '#5f9ea0', darkgreen: '#006400', darkpurple: '#4b0082',
+    gray: '#6c757d',
+  };
+  return map[name] || '#0d6efd';
+}
+
+function makeIcon(color) {
+  const hex = colorToHex(color);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="24" height="36">
+    <path fill="${hex}" stroke="#fff" stroke-width="1.5"
+      d="M12 0C5.4 0 0 5.4 0 12c0 9 12 24 12 24S24 21 24 12C24 5.4 18.6 0 12 0z"/>
+    <circle cx="12" cy="12" r="5" fill="#fff"/>
+  </svg>`;
+  return L.divIcon({
+    className: '',
+    html: svg,
+    iconSize: [24, 36],
+    iconAnchor: [12, 36],
+    popupAnchor: [0, -36],
+  });
+}
+
+function buildPopup(props) {
+  const color = colorToHex(props.category_color);
+  const verified = props.verified ? '<span style="background:#d1e7dd;color:#0a3622;padding:1px 6px;border-radius:4px;font-size:0.7rem;margin-left:6px">✓ Verified</span>' : '';
+  let html = `<div class="popup-name">${props.name}${verified}</div>`;
+  html += `<div class="popup-cat"><span style="background:${color};color:#fff;padding:2px 8px;border-radius:12px;font-size:0.72rem">${props.category}</span></div>`;
+  html += `<div class="popup-desc">${props.description.substring(0, 120)}${props.description.length > 120 ? '…' : ''}</div>`;
+  if (props.address) html += `<div class="popup-meta"><i class="fa fa-location-dot me-1"></i>${props.address}</div>`;
+  if (props.hours) html += `<div class="popup-meta"><i class="fa fa-clock me-1"></i>${props.hours}</div>`;
+  if (props.phone) html += `<div class="popup-meta"><i class="fa fa-phone me-1"></i><a href="tel:${props.phone}">${props.phone}</a></div>`;
+  html += `<div class="mt-2"><a href="/assets/${props.id}/" class="btn btn-sm btn-outline-primary">Full details</a></div>`;
+  return html;
+}
+
+function buildSidebarItem(props) {
+  const color = colorToHex(props.category_color);
+  return `<div class="asset-item" data-id="${props.id}" onclick="focusAsset(${props.id})">
+    <div class="name">${props.name}</div>
+    <div class="meta">
+      <span style="background:${color};color:#fff;padding:1px 6px;border-radius:10px;font-size:0.7rem">${props.category}</span>
+      ${props.address ? ' · ' + props.address : ''}
+    </div>
+  </div>`;
+}
+
+const markerById = {};
+
+function renderAssets(features) {
+  clusters.clearLayers();
+  markers = [];
+  Object.keys(markerById).forEach(k => delete markerById[k]);
+
+  const panel = document.getElementById('asset-panel');
+  if (!features.length) {
+    panel.innerHTML = '<p class="text-muted" style="font-size:0.85rem">No assets match your filter.</p>';
+    return;
+  }
+
+  panel.innerHTML = features.map(f => buildSidebarItem(f.properties)).join('');
+
+  features.forEach(f => {
+    const [lng, lat] = f.geometry.coordinates;
+    const marker = L.marker([lat, lng], { icon: makeIcon(f.properties.category_color) });
+    marker.bindPopup(buildPopup(f.properties), { maxWidth: 280 });
+    markerById[f.properties.id] = marker;
+    clusters.addLayer(marker);
+    markers.push(marker);
+  });
+}
+
+function focusAsset(id) {
+  const marker = markerById[id];
+  if (marker) {
+    clusters.zoomToShowLayer(marker, () => {
+      marker.openPopup();
+    });
+  }
+}
+
+function applyFilters() {
+  const search = document.getElementById('search-input').value.toLowerCase();
+  const checked = [...document.querySelectorAll('.cat-check:checked')].map(el => el.value);
+  const showAll = checked.includes('all');
+
+  const filtered = allFeatures.filter(f => {
+    const p = f.properties;
+    const matchCat = showAll || checked.includes(p.category_slug);
+    const matchSearch = !search ||
+      p.name.toLowerCase().includes(search) ||
+      p.description.toLowerCase().includes(search) ||
+      p.address.toLowerCase().includes(search);
+    return matchCat && matchSearch;
+  });
+
+  renderAssets(filtered);
+}
+
+// Load GeoJSON
+fetch('/api/assets.geojson')
+  .then(r => r.json())
+  .then(data => {
+    allFeatures = data.features;
+    renderAssets(allFeatures);
+  });
+
+document.getElementById('search-input').addEventListener('input', applyFilters);
+
+document.querySelectorAll('.cat-check').forEach(cb => {
+  cb.addEventListener('change', function() {
+    if (this.value === 'all') {
+      document.querySelectorAll('.cat-check:not([value="all"])').forEach(c => c.checked = false);
+    } else {
+      document.querySelector('.cat-check[value="all"]').checked = false;
+    }
+    if (!document.querySelectorAll('.cat-check:checked').length) {
+      document.querySelector('.cat-check[value="all"]').checked = true;
+    }
+    applyFilters();
+  });
+});
+</script>
+{% endblock %}

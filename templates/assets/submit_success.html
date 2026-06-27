@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Thanks! — Old North Dayton Assets{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center" style="max-width: 560px">
+  <div style="font-size: 4rem; margin-bottom: 1rem">🎉</div>
+  <h2 class="fw-bold mb-2">Thank you!</h2>
+  <p class="text-muted lead mb-4">
+    Your submission has been received and will appear on the map after a quick review.
+    We appreciate you helping build the Old North Dayton resource directory.
+  </p>
+  <div class="d-flex gap-3 justify-content-center">
+    <a href="/" class="btn btn-primary"><i class="fa fa-map me-1"></i> Back to Map</a>
+    <a href="/submit/" class="btn btn-outline-secondary"><i class="fa fa-plus me-1"></i> Add Another</a>
+  </div>
+</div>
+{% endblock %}

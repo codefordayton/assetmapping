@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}{{ asset.name }} — Old North Dayton Assets{% endblock %}
+
+{% block extra_css %}
+<style>
+  #detail-map { height: 260px; border-radius: 8px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/">Map</a></li>
+      <li class="breadcrumb-item"><a href="/assets/">Directory</a></li>
+      <li class="breadcrumb-item active">{{ asset.name }}</li>
+    </ol>
+  </nav>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      {% if asset.photo %}
+      <img src="{{ asset.photo.url }}" class="img-fluid rounded mb-4" style="max-height:320px;width:100%;object-fit:cover" alt="">
+      {% endif %}
+
+      <div class="mb-3">
+        <span class="category-badge" style="background:{{ asset.category.color }}">
+          {{ asset.category.name }}
+        </span>
+        {% if asset.verified %}
+        <span class="verified-badge ms-2">✓ Verified</span>
+        {% endif %}
+      </div>
+
+      <h1 class="fw-bold mb-3">{{ asset.name }}</h1>
+
+      <p class="lead text-muted mb-4">{{ asset.description }}</p>
+
+      {% if asset.tag_list %}
+      <div class="mb-4">
+        {% for tag in asset.tag_list %}
+        <span class="badge bg-light text-dark border me-1">{{ tag }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="card mb-4">
+        <div class="card-body">
+          <h6 class="card-title text-muted text-uppercase" style="font-size:0.75rem;letter-spacing:1px">Contact & Hours</h6>
+          <dl class="row mb-0">
+            {% if asset.address %}
+            <dt class="col-sm-3">Address</dt>
+            <dd class="col-sm-9">
+              {{ asset.address }}
+              <a href="https://www.google.com/maps/search/?api=1&query={{ asset.address|urlencode }}" target="_blank" class="ms-2 small">(Directions)</a>
+            </dd>
+            {% endif %}
+            {% if asset.phone %}
+            <dt class="col-sm-3">Phone</dt>
+            <dd class="col-sm-9"><a href="tel:{{ asset.phone }}">{{ asset.phone }}</a></dd>
+            {% endif %}
+            {% if asset.website %}
+            <dt class="col-sm-3">Website</dt>
+            <dd class="col-sm-9"><a href="{{ asset.website }}" target="_blank" rel="noopener">{{ asset.website }}</a></dd>
+            {% endif %}
+            {% if asset.hours %}
+            <dt class="col-sm-3">Hours</dt>
+            <dd class="col-sm-9">{{ asset.hours }}</dd>
+            {% endif %}
+          </dl>
+        </div>
+      </div>
+
+      <a href="/assets/" class="btn btn-outline-secondary me-2"><i class="fa fa-arrow-left me-1"></i> Back to Directory</a>
+      <a href="/" class="btn btn-outline-primary"><i class="fa fa-map me-1"></i> View on Map</a>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card sticky-top" style="top: 80px">
+        <div class="card-body p-2">
+          <div id="detail-map"></div>
+        </div>
+        <div class="card-footer text-muted small">
+          {{ asset.latitude }}, {{ asset.longitude }}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const lat = {{ asset.latitude }};
+const lng = {{ asset.longitude }};
+const map = L.map('detail-map').setView([lat, lng], 16);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap contributors'
+}).addTo(map);
+L.marker([lat, lng]).addTo(map).bindPopup('{{ asset.name|escapejs }}').openPopup();
+</script>
+{% endblock %}
