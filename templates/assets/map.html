@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Map — Old North Dayton Assets{% endblock %}
+{% block title %}Map — Greenwich Village Assets{% endblock %}
 {% block nav_map %}active{% endblock %}
 
 {% block extra_css %}
@@ -86,6 +86,7 @@
   .asset-item .name { font-weight: 600; font-size: 0.9rem; margin: 0 0 2px; }
   .asset-item .meta { font-size: 0.75rem; color: #6c757d; }
 
+  .precinct-tooltip { background: #2c7bb6; color: #fff; border: none; font-size: 0.75rem; font-weight: 600; padding: 2px 8px; border-radius: 4px; }
   .leaflet-popup-content { min-width: 200px; }
   .popup-name { font-weight: 700; font-size: 1rem; margin-bottom: 4px; }
   .popup-cat { font-size: 0.75rem; margin-bottom: 8px; }
@@ -151,12 +152,32 @@ const CATEGORY_COLORS = {
   {% for cat in categories %}'{{ cat.slug }}': '{{ cat.color }}',{% endfor %}
 };
 
-const map = L.map('map').setView([39.7728, -84.1726], 15);
+const map = L.map('map').setView([39.7933, -84.2619], 15);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
   maxZoom: 19,
 }).addTo(map);
+
+// Precinct boundaries for Greenwich Village (16D & 16E)
+fetch('/static/js/greenwich_precincts.geojson')
+  .then(r => r.json())
+  .then(data => {
+    L.geoJSON(data, {
+      style: {
+        color: '#2c7bb6',
+        weight: 2.5,
+        opacity: 0.8,
+        fillColor: '#2c7bb6',
+        fillOpacity: 0.06,
+        dashArray: '5, 4',
+      },
+      onEachFeature: function(feature, layer) {
+        const name = feature.properties.VLABEL || feature.properties.VNAME;
+        layer.bindTooltip(name, { sticky: true, className: 'precinct-tooltip' });
+      }
+    }).addTo(map);
+  });
 
 const clusters = L.markerClusterGroup({ maxClusterRadius: 40 });
 map.addLayer(clusters);

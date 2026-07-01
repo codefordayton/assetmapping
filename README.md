@@ -1,4 +1,4 @@
-# Old North Dayton Asset Map
+# Greenwich Village Asset Map
 
 A neighborhood asset mapping application built with Django and Leaflet. Residents can discover and contribute local resources — community organizations, green spaces, small businesses, and neighbors with skills to share.
 
@@ -20,7 +20,7 @@ source env/bin/activate
 pip install -r requirements.txt
 
 python manage.py migrate
-python manage.py seed_data       # loads 15 Old North Dayton demo assets
+python manage.py seed_data       # loads 15 Greenwich Village demo assets
 python manage.py createsuperuser # for admin access at /admin/
 python manage.py runserver
 ```

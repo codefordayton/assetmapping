@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Add a Resource — Old North Dayton Assets{% endblock %}
+{% block title %}Add an Asset — Greenwich Village Assets{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -40,7 +40,7 @@
         {{ form.name.errors }}
         <input type="text" name="name" value="{{ form.name.value|default:'' }}"
                class="form-control {% if form.name.errors %}is-invalid{% endif %}"
-               placeholder="e.g. Old North Food Pantry" required>
+               placeholder="e.g. Greenwich Village Community Center" required>
       </div>
       <div class="mb-3">
         <label class="form-label fw-semibold">Category *</label>
@@ -137,7 +137,7 @@ const latInput = document.getElementById('id_latitude');
 const lngInput = document.getElementById('id_longitude');
 const pinStatus = document.getElementById('pin-status');
 
-const map = L.map('location-map').setView([39.7728, -84.1726], 15);
+const map = L.map('location-map').setView([39.7933, -84.2619], 15);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© OpenStreetMap contributors'
 }).addTo(map);
