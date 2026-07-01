@@ -121,7 +121,22 @@
     letter-spacing: 1px;
     color: #6c757d;
     margin: 0 0 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
+  #civic-toggle {
+    background: none;
+    border: none;
+    padding: 0;
+    color: #aaa;
+    cursor: pointer;
+    line-height: 1;
+    font-size: 0.7rem;
+  }
+  #civic-toggle:hover { color: #555; }
+  #civic-panel.minimized { min-width: auto; }
+  #civic-panel.minimized h6 { margin-bottom: 0; }
   .civic-stat { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 5px; }
   .civic-stat .label { color: #555; }
   .civic-stat .value { font-weight: 700; color: #212529; }
@@ -181,31 +196,38 @@
   <div id="map"></div>
 
   <div id="civic-panel">
-    <h6>Greenwich Village Civic Info</h6>
-    <div class="civic-stat">
-      <span class="label">Registered voters</span>
-      <span class="value">1,972</span>
-    </div>
-    <div class="civic-stat">
-      <span class="label">2024 ballots cast</span>
-      <span class="value">1,203</span>
-    </div>
-    <div class="civic-stat">
-      <span class="label">2024 turnout</span>
-      <span class="value">61%</span>
-    </div>
-    <div class="civic-stat" style="margin-bottom:0">
-      <span class="label">Precincts</span>
-      <span class="value">16D &amp; 16E</span>
-    </div>
-    <div class="turnout-bar"><div class="turnout-fill" style="width:61%"></div></div>
-    <div class="civic-links">
-      <a href="https://lookup.boe.ohio.gov" target="_blank" rel="noopener">
-        <i class="fa fa-check-to-slot me-1"></i>Look up your voter registration
-      </a>
-      <a href="https://www.mcohio.org/government/county_agencies/board_of_elections/" target="_blank" rel="noopener">
-        <i class="fa fa-landmark me-1"></i>Montgomery County BOE
-      </a>
+    <h6>
+      Greenwich Village Civic Info
+      <button id="civic-toggle" onclick="toggleCivicPanel()" title="Minimize">
+        <i class="fa fa-chevron-down" id="civic-chevron"></i>
+      </button>
+    </h6>
+    <div id="civic-body">
+      <div class="civic-stat">
+        <span class="label">Registered voters</span>
+        <span class="value">1,972</span>
+      </div>
+      <div class="civic-stat">
+        <span class="label">2024 ballots cast</span>
+        <span class="value">1,203</span>
+      </div>
+      <div class="civic-stat">
+        <span class="label">2024 turnout</span>
+        <span class="value">61%</span>
+      </div>
+      <div class="civic-stat" style="margin-bottom:0">
+        <span class="label">Precincts</span>
+        <span class="value">16D &amp; 16E</span>
+      </div>
+      <div class="turnout-bar"><div class="turnout-fill" style="width:61%"></div></div>
+      <div class="civic-links">
+        <a href="https://lookup.boe.ohio.gov" target="_blank" rel="noopener">
+          <i class="fa fa-check-to-slot me-1"></i>Look up your voter registration
+        </a>
+        <a href="https://www.mcohio.org/government/county_agencies/board_of_elections/" target="_blank" rel="noopener">
+          <i class="fa fa-landmark me-1"></i>Montgomery County BOE
+        </a>
+      </div>
     </div>
   </div>
 </div>
@@ -213,6 +235,15 @@
 
 {% block extra_js %}
 <script>
+function toggleCivicPanel() {
+  const panel = document.getElementById('civic-panel');
+  const body = document.getElementById('civic-body');
+  const chevron = document.getElementById('civic-chevron');
+  const minimized = panel.classList.toggle('minimized');
+  body.style.display = minimized ? 'none' : '';
+  chevron.className = minimized ? 'fa fa-chevron-up' : 'fa fa-chevron-down';
+}
+
 const CATEGORY_COLORS = {
   {% for cat in categories %}'{{ cat.slug }}': '{{ cat.color }}',{% endfor %}
 };
