@@ -222,7 +222,7 @@
       </div>
       <div class="turnout-bar"><div class="turnout-fill" style="width:61%"></div></div>
       <div class="civic-links">
-        <a href="https://lookup.boe.ohio.gov" target="_blank" rel="noopener">
+        <a href="https://voterlookup.ohiosos.gov/" target="_blank" rel="noopener">
           <i class="fa fa-check-to-slot me-1"></i>Look up your voter registration
         </a>
         <a href="https://www.mcohio.org/government/county_agencies/board_of_elections/" target="_blank" rel="noopener">
@@ -281,7 +281,6 @@ fetch('/static/js/greenwich_precincts.geojson')
           ? Math.round(p['2024_Voter_Turnout_Total'] * 100)
           : 0;
         const pdfUrl = p.WEB_PRECIN || '#';
-        const pollUrl = p.POLLING_LO || 'https://www.mcohio.org/MPLR%20by%20Precinct.pdf';
 
         const html = `<div class="precinct-popup">
           <div class="pp-name">${label}</div>
@@ -293,11 +292,11 @@ fetch('/static/js/greenwich_precincts.geojson')
             <a href="${pdfUrl}" target="_blank" rel="noopener" style="display:block;margin-bottom:3px">
               <i class="fa fa-map me-1"></i>View precinct map (PDF)
             </a>
-            <a href="${pollUrl}" target="_blank" rel="noopener" style="display:block;margin-bottom:3px">
+            <a href="https://www.mcohio.org/government/county_agencies/board_of_elections/" target="_blank" rel="noopener" style="display:block;margin-bottom:3px">
               <i class="fa fa-check-to-slot me-1"></i>Find polling location
             </a>
-            <a href="https://lookup.boe.ohio.gov" target="_blank" rel="noopener" style="display:block">
-              <i class="fa fa-user-check me-1"></i>Voter lookup (Ohio BOE)
+            <a href="https://voterlookup.ohiosos.gov/" target="_blank" rel="noopener" style="display:block">
+              <i class="fa fa-user-check me-1"></i>Voter lookup (Ohio SOS)
             </a>
           </div>
         </div>`;
