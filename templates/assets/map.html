@@ -101,10 +101,46 @@
     transition: left 0.2s;
   }
 
+  #civic-panel {
+    position: absolute;
+    bottom: 24px;
+    right: 16px;
+    z-index: 1000;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    padding: 14px 16px;
+    min-width: 210px;
+    border-left: 4px solid #2c7bb6;
+    font-size: 0.82rem;
+  }
+  #civic-panel h6 {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #6c757d;
+    margin: 0 0 10px;
+  }
+  .civic-stat { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 5px; }
+  .civic-stat .label { color: #555; }
+  .civic-stat .value { font-weight: 700; color: #212529; }
+  .civic-links { margin-top: 10px; padding-top: 10px; border-top: 1px solid #e9ecef; }
+  .civic-links a { display: block; font-size: 0.78rem; color: #2c7bb6; margin-bottom: 3px; }
+
+  .precinct-popup { min-width: 220px; }
+  .precinct-popup .pp-name { font-weight: 700; font-size: 0.95rem; margin-bottom: 8px; color: #2c7bb6; }
+  .precinct-popup .pp-stat { display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 4px; }
+  .precinct-popup .pp-stat .lbl { color: #666; }
+  .precinct-popup .pp-stat .val { font-weight: 600; }
+  .turnout-bar { height: 6px; background: #e9ecef; border-radius: 3px; margin: 8px 0; }
+  .turnout-fill { height: 100%; border-radius: 3px; background: #2c7bb6; }
+
   @media (max-width: 768px) {
     #sidebar { width: 100%; height: 40vh; top: auto; bottom: 0; }
     #map { left: 0; height: 60vh; top: 56px; bottom: auto; }
     #toggle-sidebar { display: none; }
+    #civic-panel { display: none; }
   }
 </style>
 {% endblock %}
@@ -143,6 +179,35 @@
   </div>
 
   <div id="map"></div>
+
+  <div id="civic-panel">
+    <h6>Greenwich Village Civic Info</h6>
+    <div class="civic-stat">
+      <span class="label">Registered voters</span>
+      <span class="value">1,972</span>
+    </div>
+    <div class="civic-stat">
+      <span class="label">2024 ballots cast</span>
+      <span class="value">1,203</span>
+    </div>
+    <div class="civic-stat">
+      <span class="label">2024 turnout</span>
+      <span class="value">61%</span>
+    </div>
+    <div class="civic-stat" style="margin-bottom:0">
+      <span class="label">Precincts</span>
+      <span class="value">16D &amp; 16E</span>
+    </div>
+    <div class="turnout-bar"><div class="turnout-fill" style="width:61%"></div></div>
+    <div class="civic-links">
+      <a href="https://lookup.boe.ohio.gov" target="_blank" rel="noopener">
+        <i class="fa fa-check-to-slot me-1"></i>Look up your voter registration
+      </a>
+      <a href="https://www.mcohio.org/government/county_agencies/board_of_elections/" target="_blank" rel="noopener">
+        <i class="fa fa-landmark me-1"></i>Montgomery County BOE
+      </a>
+    </div>
+  </div>
 </div>
 {% endblock %}
 
@@ -173,8 +238,43 @@ fetch('/static/js/greenwich_precincts.geojson')
         dashArray: '5, 4',
       },
       onEachFeature: function(feature, layer) {
-        const name = feature.properties.VLABEL || feature.properties.VNAME;
-        layer.bindTooltip(name, { sticky: true, className: 'precinct-tooltip' });
+        const p = feature.properties;
+        const label = p.VLABEL || p.VNAME;
+        const registered = (p['2024_Registered_Voters_Total'] || 0).toLocaleString();
+        const cast = (p['2024_Ballots_Cast_Total'] || 0).toLocaleString();
+        const turnout = p['2024_Voter_Turnout_Total']
+          ? Math.round(p['2024_Voter_Turnout_Total'] * 100) + '%'
+          : 'N/A';
+        const turnoutPct = p['2024_Voter_Turnout_Total']
+          ? Math.round(p['2024_Voter_Turnout_Total'] * 100)
+          : 0;
+        const pdfUrl = p.WEB_PRECIN || '#';
+        const pollUrl = p.POLLING_LO || 'https://www.mcohio.org/MPLR%20by%20Precinct.pdf';
+
+        const html = `<div class="precinct-popup">
+          <div class="pp-name">${label}</div>
+          <div class="pp-stat"><span class="lbl">Registered voters</span><span class="val">${registered}</span></div>
+          <div class="pp-stat"><span class="lbl">2024 ballots cast</span><span class="val">${cast}</span></div>
+          <div class="pp-stat"><span class="lbl">2024 turnout</span><span class="val">${turnout}</span></div>
+          <div class="turnout-bar"><div class="turnout-fill" style="width:${turnoutPct}%"></div></div>
+          <div style="margin-top:8px;font-size:0.78rem">
+            <a href="${pdfUrl}" target="_blank" rel="noopener" style="display:block;margin-bottom:3px">
+              <i class="fa fa-map me-1"></i>View precinct map (PDF)
+            </a>
+            <a href="${pollUrl}" target="_blank" rel="noopener" style="display:block;margin-bottom:3px">
+              <i class="fa fa-check-to-slot me-1"></i>Find polling location
+            </a>
+            <a href="https://lookup.boe.ohio.gov" target="_blank" rel="noopener" style="display:block">
+              <i class="fa fa-user-check me-1"></i>Voter lookup (Ohio BOE)
+            </a>
+          </div>
+        </div>`;
+
+        layer.bindTooltip(label, { sticky: true, className: 'precinct-tooltip' });
+        layer.bindPopup(html, { maxWidth: 260 });
+
+        layer.on('mouseover', function() { this.setStyle({ fillOpacity: 0.14 }); });
+        layer.on('mouseout', function() { this.setStyle({ fillOpacity: 0.06 }); });
       }
     }).addTo(map);
   });
